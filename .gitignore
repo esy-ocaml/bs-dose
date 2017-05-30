@@ -12,3 +12,5 @@ doc/manpages/*.1
 *.native
 *.byte
 */*\.swp
+*.itarget
+node_modules

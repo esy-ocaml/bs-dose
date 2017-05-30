@@ -11,25 +11,25 @@
 (**************************************************************************************)
 
 {
-  open Criteria_parser
+open Criteria_parser
 
-  let get_regexp lexbuf =
-    let open Lexing in
-    let c = Lexing.lexeme_char lexbuf 2 in (* the delimiter can be any character *)
-    (* find the terminating delimiter *)
-    let endpos =
-      try String.index_from lexbuf.lex_buffer (lexbuf.lex_start_pos + 3) c with
-      |Invalid_argument _ ->
-          raise (Format822.Syntax_error (
-            Format822.error lexbuf "String too short"))
-      | Not_found ->
-          raise (Format822.Syntax_error (
-            Format822.error lexbuf (Printf.sprintf "cannot find: %c" c)))
-    in
-    let len = endpos - (lexbuf.lex_start_pos + 3) in
-    let s = String.sub lexbuf.lex_buffer (lexbuf.lex_start_pos + 3) len in
-    lexbuf.Lexing.lex_curr_pos <- lexbuf.Lexing.lex_start_pos + ((String.length s)+4);
-    s
+let get_regexp lexbuf =
+  let open Lexing in
+  let c = Lexing.lexeme_char lexbuf 2 in (* the delimiter can be any character *)
+  (* find the terminating delimiter *)
+  let endpos =
+    try Bytes.index_from lexbuf.lex_buffer (lexbuf.lex_start_pos + 3) c with
+    |Invalid_argument _ ->
+      raise (Format822.Syntax_error (
+          Format822.error lexbuf "String too short"))
+    | Not_found ->
+      raise (Format822.Syntax_error (
+          Format822.error lexbuf (Printf.sprintf "cannot find: %c" c)))
+  in
+  let len = endpos - (lexbuf.lex_start_pos + 3) in
+  let s = Bytes.sub lexbuf.lex_buffer (lexbuf.lex_start_pos + 3) len in
+  lexbuf.Lexing.lex_curr_pos <- lexbuf.Lexing.lex_start_pos + ((Bytes.length s)+4);
+  s
 
 }
 
@@ -39,29 +39,29 @@ let letter = lower_letter | upper_letter
 let digit = [ '0' - '9' ]
 let blank = [ ' ' '\t' ]
 let blanks = blank+
-let symbols = ['-' '+' '.' '_' '~']
+             let symbols = ['-' '+' '.' '_' '~']
 let ident = (letter | digit) (letter | digit | symbols)*
 
-rule token = parse
-  | "count"             { COUNT }
-  | "sum"               { SUM }
-  | "unsat_recommends"  { UNSATREC }
-  | "aligned"           { ALIGNED }
-  | "notuptodate"       { NOTUPTODATE }
-  | "solution"          { SOLUTION }
-  | "changed"           { CHANGED }
-  | "new"               { NEW }
-  | "removed"           { REMOVED }
-  | "up"                { UP }
-  | "down"              { DOWN }
-  | ":="                { EXACT (get_regexp lexbuf) }
-  | ":~"                { REGEXP (get_regexp lexbuf) }
-  | '+'                 { PLUS }
-  | '-'                 { MINUS }
-  | '('                 { LPAREN }
-  | ')'                 { RPAREN }
-  | ','                 { COMMA }
-  | ident as s          { IDENT s }
-  | blank+              { token lexbuf }
-  | eof                 { EOL }
-  | _ as c              { Format822.raise_error lexbuf c }
+            rule token = parse
+          | "count"             { COUNT }
+          | "sum"               { SUM }
+          | "unsat_recommends"  { UNSATREC }
+          | "aligned"           { ALIGNED }
+          | "notuptodate"       { NOTUPTODATE }
+          | "solution"          { SOLUTION }
+          | "changed"           { CHANGED }
+          | "new"               { NEW }
+          | "removed"           { REMOVED }
+          | "up"                { UP }
+          | "down"              { DOWN }
+          | ":="                { EXACT (Bytes.to_string (get_regexp lexbuf)) }
+          | ":~"                { REGEXP (Bytes.to_string (get_regexp lexbuf)) }
+          | '+'                 { PLUS }
+          | '-'                 { MINUS }
+          | '('                 { LPAREN }
+          | ')'                 { RPAREN }
+          | ','                 { COMMA }
+          | ident as s          { IDENT s }
+          | blank+              { token lexbuf }
+          | eof                 { EOL }
+          | _ as c              { Format822.raise_error lexbuf c }

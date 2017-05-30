@@ -14,7 +14,7 @@ open Common
 open CudfAdd
 open Defaultgraphs
 
-#define __label __FILE__
+     #define __label __FILE__
 let label =  __label ;;
 include Util.Logging(struct let label = label end) ;;
 
@@ -28,19 +28,19 @@ module CflE = struct
   let default = (Cudf.default_package, Cudf.default_package, Other [])
 end
 
-module CG = Graph.Imperative.Graph.ConcreteLabeled(PackageGraph.PkgV)(CflE)
+module CG = Ocamlgraph.Imperative.Graph.ConcreteLabeled(PackageGraph.PkgV)(CflE)
 
 (* tempy. *)
 let reason univ rl =
   let from_sat = CudfAdd.inttopkg univ in
   List.map (function
-    |Diagnostic.DependencyInt(i,vl,il) ->
-      Diagnostic.Dependency(from_sat i,vl,List.map from_sat il)
-    |Diagnostic.MissingInt(i,vl) ->
-      Diagnostic.Missing(from_sat i,vl)
-    |Diagnostic.ConflictInt(i,j,vpkg) ->
-      Diagnostic.Conflict(from_sat i,from_sat j,vpkg)
-  ) rl;;
+      |Diagnostic.DependencyInt(i,vl,il) ->
+        Diagnostic.Dependency(from_sat i,vl,List.map from_sat il)
+      |Diagnostic.MissingInt(i,vl) ->
+        Diagnostic.Missing(from_sat i,vl)
+      |Diagnostic.ConflictInt(i,j,vpkg) ->
+        Diagnostic.Conflict(from_sat i,from_sat j,vpkg)
+    ) rl;;
 
 let cvt univ =
   function
@@ -49,7 +49,7 @@ let cvt univ =
   | Strongconflicts_int.Other l -> Other (reason univ l);;
 
 (** strongconflicts return the list of all strong conflicts in universe.
-    
+
     invariant: the universe must contain only edos-installable packages : see
     Depsolver.trim.
 *)
@@ -62,9 +62,9 @@ let strongconflicts universe =
   (* convert output graph *)
   ICG.iter_vertex (fun v -> CG.add_vertex g (inttovar v)) ig;
   ICG.iter_edges_e (fun (x, (x', y', l), y) ->
-    CG.add_edge_e g (inttovar x,
-      (inttovar x', inttovar y', cvt universe l),
-      inttovar y)
-  ) ig;
+      CG.add_edge_e g (inttovar x,
+                       (inttovar x', inttovar y', cvt universe l),
+                       inttovar y)
+    ) ig;
   g
 

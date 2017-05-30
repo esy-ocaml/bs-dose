@@ -24,10 +24,10 @@ let list_unique l =
   let seen = Hashtbl.create (List.length l) in
   let rec add acc = function
     |hd :: tl when not (Hashtbl.mem seen hd) ->
-        begin
-          Hashtbl.add seen hd ();
-          add (hd :: acc) tl
-        end
+      begin
+        Hashtbl.add seen hd ();
+        add (hd :: acc) tl
+      end
     |_ :: tl -> add acc tl
     |[] -> acc
   in
@@ -39,20 +39,20 @@ let memo f =
   fun i ->
     try Hashtbl.find h i
     with Not_found -> begin
-      let r = f i in
-      Hashtbl.add h i r ;
-      r
-    end
+        let r = f i in
+        Hashtbl.add h i r ;
+        r
+      end
 
 let timestamp () =
-  let tm = Unix.localtime (Unix.time ()) in
+  let tm = UnixNode.localtime (UnixNode.time ()) in
   Printf.sprintf "%04d-%02d-%02d %02d:%02d:%02d"
-    (tm.Unix.tm_year + 1900)
-    (tm.Unix.tm_mon + 1)
-    tm.Unix.tm_mday
-    tm.Unix.tm_hour
-    tm.Unix.tm_min
-    tm.Unix.tm_sec
+    (tm.UnixNode.tm_year + 1900)
+    (tm.UnixNode.tm_mon + 1)
+    tm.UnixNode.tm_mday
+    tm.UnixNode.tm_hour
+    tm.UnixNode.tm_min
+    tm.UnixNode.tm_sec
 ;;
 
 let max32int =
@@ -107,10 +107,10 @@ module MakeMessages(X : sig val label : string end) = struct
     Printf.ksprintf (
       if t.enabled then begin
         (fun s -> 
-          if raw then
-            Printf.eprintf "(%s)%s: %s" X.label t.label s
-          else
-            Printf.eprintf "(%s)%s: %s\n%!" X.label t.label s
+           if raw then
+             Printf.eprintf "(%s)%s: %s" X.label t.label s
+           else
+             Printf.eprintf "(%s)%s: %s\n%!" X.label t.label s
         )
       end else ignore
     ) fmt
@@ -129,9 +129,9 @@ module MakeMessages(X : sig val label : string end) = struct
   let is_enabled s =
     try let t = Hashtbl.find messages s in t.enabled
     with Not_found -> begin
-      Printf.eprintf "Warning: debug label %s not found\n" s;
-      false
-    end
+        Printf.eprintf "Warning: debug label %s not found\n" s;
+        false
+      end
 
 end
 
@@ -149,7 +149,7 @@ module Logging(X : sig val label : string end) = struct
   let nt = Notice.create X.label
   let notice fmt = Notice.eprintf nt fmt
 
-(* warning is enabled by default *)
+  (* warning is enabled by default *)
   let wt = Warning.create ~enabled:true X.label
   let warning fmt = Warning.eprintf wt fmt
 
@@ -159,12 +159,12 @@ module Logging(X : sig val label : string end) = struct
   let fatal fmt = 
     let l = Printf.sprintf "Fatal error in module %s: " X.label in
     Printf.kprintf (fun s ->
-      Printf.eprintf "%s\n %s\n%!" l s; 
-      Pervasives.exit (64)
-    ) fmt
+        Printf.eprintf "%s\n %s\n%!" l s; 
+        Pervasives.exit (64)
+      ) fmt
 end
 
-#define __label __FILE__
+                                                 #define __label __FILE__
 let label =  __label ;;
 include Logging(struct let label = label end) ;;
 
@@ -253,7 +253,7 @@ module Timer = struct
 
   let timers = Hashtbl.create 10
   let gettimeofday = ref (fun _ -> 0.)
-  let () = gettimeofday := Unix.gettimeofday
+  let () = gettimeofday := UnixNode.gettimeofday
 
   let pp_timer fmt c =
     if c.total = 0. then
@@ -293,9 +293,9 @@ module Timer = struct
 end
 
 let pp_process_time fmt () =
-  let pt = Unix.times () in
-  Printf.fprintf fmt "Process time (user):  %5.2f\n%!" pt.Unix.tms_utime;
-  Printf.fprintf fmt "Process time (sys):   %5.2f\n%!" pt.Unix.tms_stime
+  let pt = UnixNode.times () in
+  Printf.fprintf fmt "Process time (user):  %5.2f\n%!" pt.UnixNode.tms_utime;
+  Printf.fprintf fmt "Process time (sys):   %5.2f\n%!" pt.UnixNode.tms_stime
 ;;
 
 module StringHashtbl = Hashtbl.Make (
@@ -304,7 +304,7 @@ module StringHashtbl = Hashtbl.Make (
     let equal (a : string) (b : string) = (a = b)
     let hash s = Hashtbl.hash s
   end
-)
+  )
 
 let hits = ref 0;;
 let miss = ref 0;;
@@ -324,7 +324,7 @@ module StringPairHashtbl = Hashtbl.Make (
     let equal (a : string * string) (b : string * string) = (a = b)
     let hash s = Hashtbl.hash s
   end
-)
+  )
 
 module IntHashtbl = Hashtbl.Make (
   struct
@@ -332,7 +332,7 @@ module IntHashtbl = Hashtbl.Make (
     let equal (a : int) (b : int) = (a = b)
     let hash i = Hashtbl.hash i
   end
-)
+  )
 
 module IntPairHashtbl = Hashtbl.Make (
   struct
@@ -340,12 +340,12 @@ module IntPairHashtbl = Hashtbl.Make (
     let equal (a : int * int) (b : int * int) = (a = b)
     let hash i = Hashtbl.hash i
   end
-)
+  )
 
 let range i j =
- let rec aux acc n =
-   if n < i then acc else aux (n::acc) (n-1)
- in aux [] j
+  let rec aux acc n =
+    if n < i then acc else aux (n::acc) (n-1)
+  in aux [] j
 ;;
 
 let string_of_list ?(delim=("","")) ?(sep=",") string_of_item l =
@@ -353,11 +353,11 @@ let string_of_list ?(delim=("","")) ?(sep=",") string_of_item l =
   let rec aux = function
     | [] -> assert false
     | [last] -> (* last item, no trailing sep *)
-        Buffer.add_string buf (string_of_item last)
+      Buffer.add_string buf (string_of_item last)
     | item :: tl -> (* at least one item in tl *)
-        Buffer.add_string buf (string_of_item item);
-        Buffer.add_string buf sep;
-        aux tl 
+      Buffer.add_string buf (string_of_item item);
+      Buffer.add_string buf sep;
+      aux tl 
   in
   Buffer.add_string buf (fst delim);
   begin match l with

@@ -11,7 +11,7 @@
 (*  library, see the COPYING file for more information.                               *)
 (**************************************************************************************)
 
-open Graph
+open Ocamlgraph
 open ExtLib
 open Common
 
@@ -23,7 +23,7 @@ let crtimer = Util.Timer.create "Algo.Dominators.cycle_reduction"
 let sdtrtimer = Util.Timer.create "Algo.Dominators.sd_transitive_reduction"
 let domtrtimer = Util.Timer.create "Algo.Dominators.dom_transitive_reduction"
 
-#define __label __FILE__
+                                   #define __label __FILE__
 let label =  __label ;;
 include Util.Logging(struct let label = label end) ;;
 
@@ -43,21 +43,21 @@ let dominators_direct ?(relative=None) graph =
   Util.Timer.start domtimer;
   let domgraph = G.create () in
   G.iter_vertex (fun p ->
-    Util.Progress.progress dombar;
-    let isp = impactset (graph,p) in
-    let sconsp = scons (graph,p) in
-    G.iter_succ (fun q ->
-      if not(CudfAdd.equal p q) then begin
-        let isq = impactset (graph,q) in
-        let dfs = S.diff isq sconsp in
-        match relative with
-        |None -> if S.subset dfs isp then G.add_edge domgraph p q
-        |Some threshold ->
-          let t = ( float ( S.cardinal (S.diff dfs isp)) *. 100.) /. ( float (S.cardinal isp)) in
-          if t <= threshold then G.add_edge domgraph p q
-      end
-    ) graph p
-  ) graph;
+      Util.Progress.progress dombar;
+      let isp = impactset (graph,p) in
+      let sconsp = scons (graph,p) in
+      G.iter_succ (fun q ->
+          if not(CudfAdd.equal p q) then begin
+            let isq = impactset (graph,q) in
+            let dfs = S.diff isq sconsp in
+            match relative with
+            |None -> if S.subset dfs isp then G.add_edge domgraph p q
+            |Some threshold ->
+              let t = ( float ( S.cardinal (S.diff dfs isp)) *. 100.) /. ( float (S.cardinal isp)) in
+              if t <= threshold then G.add_edge domgraph p q
+          end
+        ) graph p
+    ) graph;
   Util.Timer.stop domtimer ();
   debug "after dominators direct : vertex %d - edges %d" (G.nb_vertex domgraph) (G.nb_edges domgraph);
 
@@ -70,7 +70,7 @@ let dominators_direct ?(relative=None) graph =
   O.transitive_reduction domgraph;
   Util.Timer.stop domtrtimer ();
   debug "after transitive reduction dominators : vertex %d - edges %d"
-  (G.nb_vertex domgraph) (G.nb_edges domgraph);
+    (G.nb_vertex domgraph) (G.nb_edges domgraph);
 
   domgraph
 ;;
@@ -96,28 +96,28 @@ let dominators_tarjan graph =
 
   (* connect it to all packages without incoming edges to a start vertex *)
   G.iter_vertex (fun v ->
-    if (G.in_degree graph v) = 0 then
-      G.add_edge graph start_pkg v;
-  ) graph;
+      if (G.in_degree graph v) = 0 then
+        G.add_edge graph start_pkg v;
+    ) graph;
 
   Util.Timer.start tjntimer;
-#if OCAMLGRAPHVERSION >= 186
-  let module Dom = Dominator.Make_graph(G) in
+  #if OCAMLGRAPHVERSION >= 186
+let module Dom = Dominator.Make_graph(G) in
 #else
   let module Dom = Dominator.Make(G) in
-#endif
-  let idom = Dom.compute_all graph start_pkg in
-  let domgr = idom.Dom.dom_graph () in
-  Util.Timer.stop tjntimer ();
+  #endif
+let idom = Dom.compute_all graph start_pkg in
+let domgr = idom.Dom.dom_graph () in
+Util.Timer.stop tjntimer ();
 
-  G.remove_vertex graph start_pkg;
-  G.remove_vertex domgr start_pkg;
-  
-  Util.Timer.start domtrtimer;
-  O.transitive_reduction domgr;
-  Util.Timer.stop domtrtimer ();
-  debug "after transitive reduction dominators : vertex %d - edges %d" (G.nb_vertex domgr) (G.nb_edges domgr);
+G.remove_vertex graph start_pkg;
+G.remove_vertex domgr start_pkg;
 
-  domgr
+Util.Timer.start domtrtimer;
+O.transitive_reduction domgr;
+Util.Timer.stop domtrtimer ();
+debug "after transitive reduction dominators : vertex %d - edges %d" (G.nb_vertex domgr) (G.nb_edges domgr);
+
+domgr
 ;;
 

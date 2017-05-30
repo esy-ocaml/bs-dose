@@ -18,11 +18,11 @@
 
 (** Small World analisys *)
 
-open Graph
+open Ocamlgraph
 open ExtLib
 open Common
 
-#define __label __FILE__
+     #define __label __FILE__
 let label =  __label ;;
 include Util.Logging(struct let label = label end) ;;
 
@@ -34,14 +34,14 @@ module Make (G: Sig.I ) = struct
   let undirect g =
     let g2 = UndG.create () in
     G.iter_vertex (fun v ->
-      UndG.add_vertex g2 v;
-      G.iter_succ (fun v' ->
-        UndG.add_edge g2 v v'
-      ) g v;
-      G.iter_pred (fun v' ->
-        UndG.add_edge g2 v' v
-      ) g v
-    ) g;
+        UndG.add_vertex g2 v;
+        G.iter_succ (fun v' ->
+            UndG.add_edge g2 v v'
+          ) g v;
+        G.iter_pred (fun v' ->
+            UndG.add_edge g2 v' v
+          ) g v
+      ) g;
     g2
   ;;
 
@@ -52,16 +52,16 @@ module Make (G: Sig.I ) = struct
     if n = 0 then 0.0
     else if n = 1 then 1.0
     else
-    let n_edges = List.fold_left (fun old_sum v ->
-            old_sum + (List.fold_left (fun old_sum' v' ->
-                    if G.mem_edge graph v v' && v <> v'
-                    then old_sum' + 1
-                    else old_sum' 	
+      let n_edges = List.fold_left (fun old_sum v ->
+          old_sum + (List.fold_left (fun old_sum' v' ->
+              if G.mem_edge graph v v' && v <> v'
+              then old_sum' + 1
+              else old_sum' 	
             ) 0 neighbours)
-    ) 0 neighbours 
-    and max_edges = if G.is_directed then n * (n-1) else n * (n-1) / 2
-  in 
-  float_of_int n_edges /. float_of_int max_edges	
+        ) 0 neighbours 
+      and max_edges = if G.is_directed then n * (n-1) else n * (n-1) / 2
+      in 
+      float_of_int n_edges /. float_of_int max_edges	
 
   let average_distance graph vertex = 
     let rec add_successors distance visited vertices =
@@ -69,38 +69,38 @@ module Make (G: Sig.I ) = struct
       let succs = ref [] in 
       let (n, sum) =
         List.fold_left (fun (old_n, old_sum) v ->
-          if not (VS.mem v !visited) then
-            begin
-              visited := VS.add v !visited;
-              succs := (G.succ graph v)::!succs;
-              (old_n + 1, old_sum + distance)
-            end
-          else
-            (old_n, old_sum)
-        ) (0, 0) vertices
+            if not (VS.mem v !visited) then
+              begin
+                visited := VS.add v !visited;
+                succs := (G.succ graph v)::!succs;
+                (old_n + 1, old_sum + distance)
+              end
+            else
+              (old_n, old_sum)
+          ) (0, 0) vertices
       in
       let sf =  List.flatten !succs in
       if sf <> [] then
         let (n', sum') = add_successors (distance + 1) visited sf in
-          (n + n', sum + sum')
+        (n + n', sum + sum')
       else
         (n, sum)
     in
     let visited = ref (VS.singleton vertex) in
     let (n, sum) = add_successors 1 visited (G.succ graph vertex)
-  in
-  if sum = 0 then 0.0 else float_of_int sum /. float_of_int n
+    in
+    if sum = 0 then 0.0 else float_of_int sum /. float_of_int n
   ;;
 
   module MSin = Map.Make (struct
-    type t = (G.V.t * G.t ref)
-    let compare (v1,g) (v2,g) = (G.in_degree !g v1) - (G.in_degree !g v2)
-  end)
+      type t = (G.V.t * G.t ref)
+      let compare (v1,g) (v2,g) = (G.in_degree !g v1) - (G.in_degree !g v2)
+    end)
 
   module MSout = Map.Make (struct
-    type t = (G.V.t * G.t ref)
-    let compare (v1,g) (v2,g) = (G.out_degree !g v1) - (G.out_degree !g v2)
-  end)
+      type t = (G.V.t * G.t ref)
+      let compare (v1,g) (v2,g) = (G.out_degree !g v1) - (G.out_degree !g v2)
+    end)
 
   let _avgdegree = ref None
   let _outdata = ref None
@@ -122,14 +122,14 @@ module Make (G: Sig.I ) = struct
     in
     let total = 
       G.fold_vertex (fun v sum ->
-        let outdeg = G.out_degree graph v in
-        let indeg = G.in_degree graph v in
-        add outh outdeg;
-        add inh indeg;
-        _indatadegree := MSin.add (v,ref graph) indeg !_indatadegree;
-        _outdatadegree := MSout.add (v,ref graph) outdeg !_outdatadegree;
-        sum + indeg
-      ) graph 0
+          let outdeg = G.out_degree graph v in
+          let indeg = G.in_degree graph v in
+          add outh outdeg;
+          add inh indeg;
+          _indatadegree := MSin.add (v,ref graph) indeg !_indatadegree;
+          _outdatadegree := MSout.add (v,ref graph) outdeg !_outdatadegree;
+          sum + indeg
+        ) graph 0
     in
     ( (float_of_int total) /. (float_of_int nv) , !outmax, !inmax, outh, inh)
   ;;
@@ -161,11 +161,11 @@ module Make (G: Sig.I ) = struct
 
   let zdp graph =
     G.fold_vertex (fun v sum ->
-      if G.in_degree graph v = 0 && G.out_degree graph v = 0 then
-        sum + 1
-      else
-        sum
-    ) graph 0
+        if G.in_degree graph v = 0 && G.out_degree graph v = 0 then
+          sum + 1
+        else
+          sum
+      ) graph 0
   ;;
 
   let scatteredPlotIn graph =
@@ -184,8 +184,8 @@ module Make (G: Sig.I ) = struct
       with Not_found -> Hashtbl.add h (i, o) 1 in
     let h = Hashtbl.create 1031 in
     G.iter_vertex (fun v ->
-      add h (G.in_degree graph v) (G.out_degree graph v)
-    ) graph; 
+        add h (G.in_degree graph v) (G.out_degree graph v)
+      ) graph; 
     h
   ;;
 
@@ -194,17 +194,17 @@ module Make (G: Sig.I ) = struct
     let n = float_of_int (G.nb_vertex graph) in
     let cd v = (float_of_int v) /. (n -. 1.0) in
     let m =
-       G.fold_vertex (fun v max ->
-         let s = (List.length (fd graph v)) in
-         let m = cd s in
-         if m > max then m else max
-       ) graph 0.0
+      G.fold_vertex (fun v max ->
+          let s = (List.length (fd graph v)) in
+          let m = cd s in
+          if m > max then m else max
+        ) graph 0.0
     in
     let c = 
       G.fold_vertex (fun v sum ->
-        let s = (List.length (fd graph v)) in
-        (sum +. (m -. (cd s)))
-      ) graph 0.0
+          let s = (List.length (fd graph v)) in
+          (sum +. (m -. (cd s)))
+        ) graph 0.0
     in c /. (n -. 2.0)
   ;;
 
@@ -216,15 +216,15 @@ module Make (G: Sig.I ) = struct
     let c =
       G.fold_vertex (fun v acc ->
           acc +. clustering_coefficient graph v
-      ) graph 0.0
+        ) graph 0.0
     in c /. n
 
   let averageShortestPathLength graph =
     let n = float_of_int (G.nb_vertex graph) in
     let c = 
       G.fold_vertex (fun v acc ->
-        acc +. (average_distance graph v)
-      ) graph 0.0
+          acc +. (average_distance graph v)
+        ) graph 0.0
     in c /. n
 
   (* strongly directed components *)
@@ -243,8 +243,8 @@ module Make (G: Sig.I ) = struct
   let averageComponents c =
     let sum =
       Array.fold_left (fun acc i ->
-        acc + List.length i
-      ) 0 c
+          acc + List.length i
+        ) 0 c
     in
     (float_of_int sum /. float_of_int (Array.length c))
 
@@ -263,22 +263,22 @@ module Make (G: Sig.I ) = struct
     let n = float_of_int (G.nb_vertex graph) in
     let t = 
       G.fold_vertex (fun i0 total ->
-        let s = 
-          G.fold_succ (fun i1 set1 ->
-            G.fold_succ (fun i2 set2 ->
-              S.add i2 set2
-            ) graph i1 set1
-          ) graph i0 (S.empty)
-        in total +. (float_of_int (S.cardinal s));
-      ) graph 0.0
+          let s = 
+            G.fold_succ (fun i1 set1 ->
+                G.fold_succ (fun i2 set2 ->
+                    S.add i2 set2
+                  ) graph i1 set1
+              ) graph i0 (S.empty)
+          in total +. (float_of_int (S.cardinal s));
+        ) graph 0.0
     in t /. n
 
   let removezdp graph =
     let g = G.copy graph in
     G.iter_vertex (fun v ->
-      if G.in_degree graph v = 0 && G.out_degree graph v = 0 then
-        G.remove_vertex g v;
-    ) graph;
+        if G.in_degree graph v = 0 && G.out_degree graph v = 0 then
+          G.remove_vertex g v;
+      ) graph;
     g
   ;;
 
@@ -297,7 +297,7 @@ module Make (G: Sig.I ) = struct
     ((float_of_int !total) /. ps_edg)
 
   let shorter_path_length gr v =
-    let module Bfs = Graph.Traverse.Bfs(G) in
+    let module Bfs = Ocamlgraph.Traverse.Bfs(G) in
     let seen = Hashtbl.create 1031 in
     let level = ref 0 in
     Bfs.prefix_component (fun v ->

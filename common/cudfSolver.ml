@@ -16,7 +16,7 @@ module Pcre = Re_pcre
 
 open ExtLib
 
-#define __label __FILE__
+     #define __label __FILE__
 let label =  __label ;;
 include Util.Logging(struct let label = label end) ;;
 
@@ -44,22 +44,22 @@ let mktmpdir prefix suffix =
   let rec try_name counter =
     let name = temp_file_name temp_dir prefix suffix in
     try
-      Unix.mkdir name 0o700;
+      UnixNode.mkdir name 0o700;
       name
-    with Unix.Unix_error _ as e ->
+    with UnixNode.Unix_error _ as e ->
       if counter >= 1000 then raise e else try_name (counter + 1)
   in try_name 0
 
 let rmtmpdir path =
   begin try
-    Sys.remove (Filename.concat path "in-cudf");
-    Sys.remove (Filename.concat path "out-cudf")
-  with e -> warning "Cannot remove %s/{in-cudf,out-cudf}" path end;
+      Sys.remove (Filename.concat path "in-cudf");
+      Sys.remove (Filename.concat path "out-cudf")
+    with e -> warning "Cannot remove %s/{in-cudf,out-cudf}" path end;
   begin try
-    Unix.rmdir path
-  with e ->
-    warning "cannot delete temporary directory %s - not empty?" path;
-    raise e
+      UnixNode.rmdir path
+    with e ->
+      warning "cannot delete temporary directory %s - not empty?" path;
+      raise e
   end
 ;;
 
@@ -69,8 +69,8 @@ let rec input_all_lines acc chan =
 ;;
 
 (** Solver "exec:" line. Contains three named wildcards to be interpolated:
-   "$in", "$out", and "$pref"; corresponding to, respectively, input CUDF
-   document, output CUDF universe, user preferences. *)
+    "$in", "$out", and "$pref"; corresponding to, respectively, input CUDF
+    document, output CUDF universe, user preferences. *)
 
 (* remove all characters disallowed in criteria *)
 (* TODO: should this really be done? *)
@@ -95,60 +95,60 @@ exception Unsat
 
 let raise_error fmt =
   Printf.kprintf (fun s ->
-    raise (Error s)
-  ) fmt
+      raise (Error s)
+    ) fmt
 ;;
 
 let check_exit_status cmd = function
-  |Unix.WEXITED 0   -> ()
-  |Unix.WEXITED i   -> raise_error "command '%s' failed with code %d" cmd i
-  |Unix.WSIGNALED i -> raise_error "command '%s' killed by signal %d" cmd i
-  |Unix.WSTOPPED i  -> raise_error "command '%s' stopped by signal %d" cmd i
+  |UnixNode.WEXITED 0   -> ()
+  |UnixNode.WEXITED i   -> raise_error "command '%s' failed with code %d" cmd i
+  |UnixNode.WSIGNALED i -> raise_error "command '%s' killed by signal %d" cmd i
+  |UnixNode.WSTOPPED i  -> raise_error "command '%s' stopped by signal %d" cmd i
 ;;
 
 let timer3 = Util.Timer.create "cudfio" ;;
 let timer4 = Util.Timer.create "solver" ;;
 
 let try_set_close_on_exec fd =
-  try Unix.set_close_on_exec fd; true with Invalid_argument _ -> false
+  try UnixNode.set_close_on_exec fd; true with Invalid_argument _ -> false
 
 let open_proc_full cmd env input output error toclose =
   let cloexec = List.for_all try_set_close_on_exec toclose in
-  match Unix.fork() with
-  | 0 -> Unix.dup2 input Unix.stdin; Unix.close input;
-         Unix.dup2 output Unix.stdout; Unix.close output;
-         Unix.dup2 error Unix.stderr; Unix.close error;
-         if not cloexec then List.iter Unix.close toclose;
-         begin try Unix.execvpe (List.hd cmd) (Array.of_list cmd) env
-         with _ -> exit 127
-         end
+  match UnixNode.fork() with
+  | 0 -> UnixNode.dup2 input UnixNode.stdin; UnixNode.close input;
+    UnixNode.dup2 output UnixNode.stdout; UnixNode.close output;
+    UnixNode.dup2 error UnixNode.stderr; UnixNode.close error;
+    if not cloexec then List.iter UnixNode.close toclose;
+    begin try UnixNode.execvpe (List.hd cmd) (Array.of_list cmd) env
+      with _ -> exit 127
+    end
   | id -> id
 
 (* bits and pieces borrowed from ocaml stdlib/filename.ml *)
 let open_process argv env =
-  let (in_read, in_write) = Unix.pipe() in
+  let (in_read, in_write) = UnixNode.pipe() in
   let fds_to_close = ref [in_read;in_write] in
   try
-    let (out_read, out_write) = Unix.pipe() in
+    let (out_read, out_write) = UnixNode.pipe() in
     fds_to_close := out_read::out_write:: !fds_to_close;
-    let (err_read, err_write) = Unix.pipe() in
+    let (err_read, err_write) = UnixNode.pipe() in
     fds_to_close := err_read::err_write:: !fds_to_close;
-    let inchan = Unix.in_channel_of_descr in_read in
-    let outchan = Unix.out_channel_of_descr out_write in
-    let errchan = Unix.in_channel_of_descr err_read in
+    let inchan = UnixNode.in_channel_of_descr in_read in
+    let outchan = UnixNode.out_channel_of_descr out_write in
+    let errchan = UnixNode.in_channel_of_descr err_read in
     let pid = open_proc_full argv env out_read in_write err_write [in_read; out_write; err_read] in
-    Unix.close out_read;
-    Unix.close in_write;
-    Unix.close err_write;
+    UnixNode.close out_read;
+    UnixNode.close in_write;
+    UnixNode.close err_write;
     (inchan, outchan, errchan,pid)
   with e ->
-    List.iter Unix.close !fds_to_close;
+    List.iter UnixNode.close !fds_to_close;
     raise e
 ;;
 
 let rec waitpid_non_intr pid =
-  try Unix.waitpid [] pid
-  with Unix.Unix_error (Unix.EINTR, _, _) -> waitpid_non_intr pid
+  try UnixNode.waitpid [] pid
+  with UnixNode.Unix_error (UnixNode.EINTR, _, _) -> waitpid_non_intr pid
 
 let close_process (inchan, outchan, errchan,pid) =
   close_in inchan;
@@ -168,7 +168,7 @@ let execsolver exec_pat criteria cudf =
   let tmpdir = mktmpdir "tmp.apt-cudf." "" in
   let aux () =
     let solver_in = Filename.concat tmpdir "in-cudf" in
-    Unix.mkfifo solver_in 0o600;
+    UnixNode.mkfifo solver_in 0o600;
     let solver_out = Filename.concat tmpdir "out-cudf" in
     let argv = interpolate_solver_pat exec_pat solver_in solver_out criteria in
     let command = String.join " " argv in
@@ -177,20 +177,20 @@ let execsolver exec_pat criteria cudf =
 
     (* Tell OCaml we want to capture SIGCHLD                       *)
     (* In case the external solver fails before reading its input, *)
-    (* this will raise a Unix.EINTR error which is captured below  *)
+    (* this will raise a UnixNode.EINTR error which is captured below  *)
     let eintr_handl = Sys.signal Sys.sigchld (Sys.Signal_handle (fun _ -> ())) in
 
-    let env = Unix.environment () in
+    let env = UnixNode.environment () in
     let (cin,cout,cerr,pid) = open_process argv env in
 
     Util.Timer.start timer3;
     begin
       try
-        let solver_in_fd = Unix.openfile solver_in [Unix.O_WRONLY;Unix.O_SYNC] 0 in
-        let oc = Unix.out_channel_of_descr solver_in_fd in
+        let solver_in_fd = UnixNode.openfile solver_in [UnixNode.O_WRONLY;UnixNode.O_SYNC] 0 in
+        let oc = UnixNode.out_channel_of_descr solver_in_fd in
         Cudf_printer.pp_cudf oc cudf;
         close_out oc
-      with Unix.Unix_error (Unix.EINTR,_,_) ->
+      with UnixNode.Unix_error (UnixNode.EINTR,_,_) ->
         info "Interrupted by EINTR while executing command '%s'" command
     end;
     Util.Timer.stop timer3 ();

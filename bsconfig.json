@@ -1,0 +1,68 @@
+{
+  "name": "bs-dose",
+  "bs-dependencies": [
+    "bs-extlib",
+    "bs-cudf",
+    "bs-ocamlgraph",
+    "bs-re"
+  ],
+  "bsc-flags": [
+    "-no-alias-deps",
+    "-w",
+    "-40+6+7+27+32..39+44+45",
+    "-pp",
+    "'cppo -V OCAML:4.02.3 -D \"OCAMLGRAPHVERSION 187\"'"
+  ],
+  "sources": [
+    {
+      "dir": "common/",
+      "files": [
+        "UnixNode.ml",
+        "SysNode.ml",
+        "criteria.ml",
+        "criteria.mli",
+        "criteria_types.ml",
+        "criteria_lexer.ml",
+        "criteria_parser.ml",
+        "criteria_parser.mli",
+        "cudfAdd.ml",
+        "cudfAdd.mli",
+        "cudfDiff.ml",
+        "cudfDiff.mli",
+        "cudfSolver.ml",
+        "cudfSolver.mli",
+        "edosSolver.ml",
+        "edosSolver.mli",
+        "shell_lexer.ml",
+        "format822.ml",
+        "input.ml",
+        "input.mli",
+        "url.ml",
+        "url.mli",
+        "util.ml",
+        "util.mli",
+        "versionInfo.ml",
+        "common.ml"
+      ]
+    },
+    {
+      "dir": "algo/",
+      "files": [
+        "defaultgraphs.ml",
+        "depsolver.ml",
+        "depsolver.mli",
+        "depsolver_int.ml",
+        "depsolver_int.mli",
+        "diagnostic.ml",
+        "diagnostic.mli",
+        "dominators.ml",
+        "flatten.ml",
+        "statistics.ml",
+        "strongconflicts.ml",
+        "strongconflicts_int.ml",
+        "strongdeps.ml",
+        "strongdeps.mli"
+      ]
+    }
+  ]
+}

@@ -15,7 +15,7 @@
 open ExtLib
 open Common
 
-#define __label __FILE__
+     #define __label __FILE__
 let label =  __label ;;
 include Util.Logging(struct let label = label end) ;;
 
@@ -31,8 +31,8 @@ module CflE = struct
 end
 
 (* unlabelled indirected graph, for the cache *)
-module IG = Graph.Imperative.Matrix.Graph
-module CG = Graph.Imperative.Graph.ConcreteLabeled(PkgV)(CflE)
+module IG = Ocamlgraph.Imperative.Matrix.Graph
+module CG = Ocamlgraph.Imperative.Graph.ConcreteLabeled(PkgV)(CflE)
 
 (** progress bar *)
 let seedingbar = Util.Progress.create "Strongconflicts_int.seeding" ;;
@@ -51,12 +51,12 @@ let to_set l = List.fold_right S.add l S.empty ;;
 let explicit univ = 
   let conflict_pairs = Hashtbl.create 1023 in
   Cudf.iteri_packages (fun i p ->
-    List.iter (fun j ->
-      let pair = swap (i,j) in
-      if i <> j && not (Hashtbl.mem conflict_pairs pair) then
-        Hashtbl.add conflict_pairs pair ();
-    ) (CudfAdd.resolve_vpkgs_int univ p.Cudf.conflicts)
-  ) univ;
+      List.iter (fun j ->
+          let pair = swap (i,j) in
+          if i <> j && not (Hashtbl.mem conflict_pairs pair) then
+            Hashtbl.add conflict_pairs pair ();
+        ) (CudfAdd.resolve_vpkgs_int univ p.Cudf.conflicts)
+    ) univ;
   conflict_pairs
 ;;
 
@@ -66,8 +66,8 @@ let triangle reverse xpred ypred common =
     let yrest = S.diff ypred xpred in
     let pred_pred = 
       S.fold (fun z acc -> 
-        S.union (to_set reverse.(z)) acc
-      ) common S.empty 
+          S.union (to_set reverse.(z)) acc
+        ) common S.empty 
     in
     (S.subset xrest pred_pred) && (S.subset yrest pred_pred)
   else
@@ -95,7 +95,7 @@ let strongconflicts univ =
   (* let cg = Strongdeps_int.SO.O.add_transitive_closure cg in *)
 
   debug "dependency graph : nodes %d , edges %d" 
-  (SG.nb_vertex cg) (SG.nb_edges cg);
+    (SG.nb_vertex cg) (SG.nb_edges cg);
 
   (* add all edges to the cache *)
   SG.iter_edges (IG.add_edge cache) cg;
@@ -127,66 +127,66 @@ let strongconflicts univ =
    * conflict and we check all pairs that have not been considered before.
    * *)
   Hashtbl.iter (fun (x,y) _ -> 
-    incr i;
-    Util.Progress.progress localbar;
+      incr i;
+      Util.Progress.progress localbar;
 
-    if not(IG.mem_edge cache x y) then begin
-      let donei = ref 0 in
-      let pkg_x = CudfAdd.inttopkg univ x in
-      let pkg_y = CudfAdd.inttopkg univ y in
-      let (a,b) =
-        (to_set (Depsolver_int.reverse_dependency_closure reverse [x]),
-        to_set (Depsolver_int.reverse_dependency_closure reverse [y])) in
+      if not(IG.mem_edge cache x y) then begin
+        let donei = ref 0 in
+        let pkg_x = CudfAdd.inttopkg univ x in
+        let pkg_y = CudfAdd.inttopkg univ y in
+        let (a,b) =
+          (to_set (Depsolver_int.reverse_dependency_closure reverse [x]),
+           to_set (Depsolver_int.reverse_dependency_closure reverse [y])) in
 
-      IG.add_edge cache x y;
-      CG.add_edge_e strongraph (x, (x, y, Explicit), y);
+        IG.add_edge cache x y;
+        CG.add_edge_e strongraph (x, (x, y, Explicit), y);
 
-      debug "(%d of %d) %s # %s ; Strong conflicts %d Tuples %d"
-      !i conflict_size pkg_x.Cudf.package pkg_y.Cudf.package
-      (CG.nb_edges strongraph)
-      ((S.cardinal a) * (S.cardinal b));
+        debug "(%d of %d) %s # %s ; Strong conflicts %d Tuples %d"
+          !i conflict_size pkg_x.Cudf.package pkg_y.Cudf.package
+          (CG.nb_edges strongraph)
+          ((S.cardinal a) * (S.cardinal b));
 
-      List.iter (fun p ->
-        List.iter (fun q ->
-          if p <> q && not (IG.mem_edge cache p q) then begin
-            IG.add_edge cache p q;
-            CG.add_edge_e strongraph (p, (x, y, Conjunctive), q);
-          end
-        ) (y::(SG.pred cg y))
-      ) (x::(SG.pred cg x))
-      ;
+        List.iter (fun p ->
+            List.iter (fun q ->
+                if p <> q && not (IG.mem_edge cache p q) then begin
+                  IG.add_edge cache p q;
+                  CG.add_edge_e strongraph (p, (x, y, Conjunctive), q);
+                end
+              ) (y::(SG.pred cg y))
+          ) (x::(SG.pred cg x))
+        ;
 
-      (* unless :
-       * 1- x and y are in triangle, that is: there is ONE reverse dependency
-       * of both x and y that has a disjunction "x | y". *)
-      let xpred = to_set reverse.(x) in
-      let ypred = to_set reverse.(y) in
-      let common = S.inter xpred ypred in
-      if (S.cardinal xpred = 1) && (S.cardinal ypred = 1) && (S.choose xpred = S.choose ypred) then
-        let p = S.choose xpred in
-        debug "triangle %s - %s (%s)" 
-          (CudfAdd.string_of_package pkg_x)
-          (CudfAdd.string_of_package pkg_y)
-          (CudfAdd.string_of_package (CudfAdd.inttopkg univ p));
-        try_add_edge strongraph p x x y; incr donei;
-        try_add_edge strongraph p y x y; incr donei;
-      else if triangle reverse xpred ypred common then
-        debug "debconf triangle %s - %s"
-          (CudfAdd.string_of_package pkg_x)
-          (CudfAdd.string_of_package pkg_y)
-      else
-        S.iter (fun p ->
-          S.iter (fun q ->
-            try_add_edge strongraph p q x y; incr donei;
-            if !donei mod 10000 = 0 then debug "%d" !donei;
-          ) (S.diff b (to_set (IG.succ cache p))) ;
-        ) a
-      ;
+        (* unless :
+         * 1- x and y are in triangle, that is: there is ONE reverse dependency
+         * of both x and y that has a disjunction "x | y". *)
+        let xpred = to_set reverse.(x) in
+        let ypred = to_set reverse.(y) in
+        let common = S.inter xpred ypred in
+        if (S.cardinal xpred = 1) && (S.cardinal ypred = 1) && (S.choose xpred = S.choose ypred) then
+          let p = S.choose xpred in
+          debug "triangle %s - %s (%s)" 
+            (CudfAdd.string_of_package pkg_x)
+            (CudfAdd.string_of_package pkg_y)
+            (CudfAdd.string_of_package (CudfAdd.inttopkg univ p));
+          try_add_edge strongraph p x x y; incr donei;
+          try_add_edge strongraph p y x y; incr donei;
+        else if triangle reverse xpred ypred common then
+          debug "debconf triangle %s - %s"
+            (CudfAdd.string_of_package pkg_x)
+            (CudfAdd.string_of_package pkg_y)
+        else
+          S.iter (fun p ->
+              S.iter (fun q ->
+                  try_add_edge strongraph p q x y; incr donei;
+                  if !donei mod 10000 = 0 then debug "%d" !donei;
+                ) (S.diff b (to_set (IG.succ cache p))) ;
+            ) a
+        ;
 
-      debug "\n | tuple examined %d" !donei;
-      total := !total + !donei
-    end
-  ) ex ;
+        debug "\n | tuple examined %d" !donei;
+        total := !total + !donei
+      end
+    ) ex ;
 
   Util.Progress.reset localbar;
   debug " total tuple examined %d" !total;

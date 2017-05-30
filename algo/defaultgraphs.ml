@@ -14,10 +14,10 @@
 module OCAMLHashtbl = Hashtbl
 
 open ExtLib
-open Graph
+open Ocamlgraph
 open Common
 
-#define __label __FILE__
+     #define __label __FILE__
 let label =  __label ;;
 include Util.Logging(struct let label = label end) ;;
 
@@ -36,15 +36,15 @@ module GraphOper (G : Sig.I) = struct
     Util.Progress.set_total trbar (G.nb_vertex graph);
     Util.Timer.start tr_timer;
     G.iter_vertex (fun v ->
-      Util.Progress.progress trbar;
-      G.iter_succ (fun w ->
-        if not(G.V.equal v w) then
-        G.iter_succ (fun z ->
-          if not(G.V.equal w z) then
-            G.remove_edge graph v z
-        ) graph w
-      ) graph v;
-    ) graph;
+        Util.Progress.progress trbar;
+        G.iter_succ (fun w ->
+            if not(G.V.equal v w) then
+              G.iter_succ (fun z ->
+                  if not(G.V.equal w z) then
+                    G.remove_edge graph v z
+                ) graph w
+          ) graph v;
+      ) graph;
     Util.Timer.stop tr_timer ();
     Util.Progress.reset trbar
   ;;
@@ -58,13 +58,13 @@ module GraphOper (G : Sig.I) = struct
     let s = to_set l in
     let sg = G.create () in
     S.iter (fun v1 ->
-      G.add_vertex sg v1;
-      List.iter (fun e ->
-        let v2 = G.E.dst e in
-        if S.mem v2 s then
-          G.add_edge_e sg e
-      ) (G.succ_e g v1)
-    ) s;
+        G.add_vertex sg v1;
+        List.iter (fun e ->
+            let v2 = G.E.dst e in
+            if S.mem v2 s then
+              G.add_edge_e sg e
+          ) (G.succ_e g v1)
+      ) s;
     sg
   ;;
 
@@ -78,7 +78,7 @@ end
     - [OrDepends] : disjuctive dependency
     - [DirDepends] : direct dependecy 
     - [Conflict] : conflict
-    *) 
+*) 
 module SyntacticDependencyGraph = struct 
   type pkg = { value : Cudf.package; root : bool}
 
@@ -135,11 +135,11 @@ module SyntacticDependencyGraph = struct
         let open Graphviz.DotAttributes in
         match G.V.label v with
         |PkgV.Pkg {value = p} -> Some 
-          { sg_name = string_of_int (Hashtbl.hash p.Cudf.package);
-            sg_attributes = [`Style `Invis];
-            sg_parent = None }
-        |_ -> None
-        *)
+                  { sg_name = string_of_int (Hashtbl.hash p.Cudf.package);
+                  sg_attributes = [`Style `Invis];
+                  sg_parent = None }
+                  |_ -> None
+                *)
 
       let default_edge_attributes = fun _ -> []
       let default_vertex_attributes = fun _ -> [`Shape `Box]
@@ -148,19 +148,19 @@ module SyntacticDependencyGraph = struct
         match G.V.label v with
         |PkgV.Or i -> [`Label "Or"; `Shape `Diamond]
         |PkgV.Pkg {value; root} ->
-            let al = ref [`Label (CudfAdd.string_of_package value)] in
-            if value.Cudf.installed then al := (`Color 0x00FF00)::!al;
-            if root then al := (`Shape `Record)::!al;
-            !al
+          let al = ref [`Label (CudfAdd.string_of_package value)] in
+          if value.Cudf.installed then al := (`Color 0x00FF00)::!al;
+          if root then al := (`Shape `Record)::!al;
+          !al
         |PkgV.Set s when CudfAdd.Cudf_set.cardinal s > 0 -> 
-            let l = CudfAdd.Cudf_set.elements s in
-            let p = CudfAdd.Cudf_set.choose s in
-            let str = 
-              Printf.sprintf "%s (=%s)"
+          let l = CudfAdd.Cudf_set.elements s in
+          let p = CudfAdd.Cudf_set.choose s in
+          let str = 
+            Printf.sprintf "%s (=%s)"
               (CudfAdd.decode p.Cudf.package)
               (Util.string_of_list ~delim:("[","]") CudfAdd.string_of_version l)
-            in
-            [`Label str; `Shape `Record]
+          in
+          [`Label str; `Shape `Record]
         |PkgV.Set s -> [`Label "empty??"; `Shape `Record] 
         |PkgV.Missing _ -> [ `Label "Missing"; `Color 0x00FF00; `Shape `Ellipse]
 
@@ -169,19 +169,17 @@ module SyntacticDependencyGraph = struct
         |PkgE.DirDepends _ -> [`Style `Solid]
         |PkgE.OrDepends _ -> [`Style `Dashed]
         |PkgE.MissingDepends vpkgs ->
-            let style = 
-              match G.E.src e with
-              |PkgV.Or _ -> `Style `Dashed
-              |_ -> `Style `Solid
-            in
-            [style ; `Label (CudfAdd.string_of (CudfAdd.pp_vpkglist !default_pp) (List.unique vpkgs))]
+          let style = 
+            match G.E.src e with
+            |PkgV.Or _ -> `Style `Dashed
+            |_ -> `Style `Solid
+          in
+          [style ; `Label (CudfAdd.string_of (CudfAdd.pp_vpkglist !default_pp) (List.unique vpkgs))]
         |PkgE.Conflict _ -> [`Color 0xFF0000; `Style `Solid; `Dir `None; `Label "#"]
         |PkgE.Condensed -> [`Style `Solid]
     end
 
-    include Graph.Graphviz.Dot(Display)
     let print fmt g = 
-      fprint_graph fmt g;
       Format.fprintf fmt "@."
   end 
   module S = Set.Make(PkgV)
@@ -195,33 +193,33 @@ module SyntacticDependencyGraph = struct
   module GraphmlPrinter = Graphml.Print (G) (
     struct
       let vertex_properties =
-          ["package","string",None;
-           "version","string",None;
-           "architecture","string",None;
-           "type","string",None;
-           "source","string",None;
-           "sourcenumber","string",None;
-           "multiarch","string",None;
-           "realpackage","string",None;
-           "realversion","string",None;
-          ]
-     
+        ["package","string",None;
+         "version","string",None;
+         "architecture","string",None;
+         "type","string",None;
+         "source","string",None;
+         "sourcenumber","string",None;
+         "multiarch","string",None;
+         "realpackage","string",None;
+         "realversion","string",None;
+        ]
+
       let edge_properties = [
         "vpkglist","string",None;
         "binaries","string",None;
-        ]
+      ]
 
       let map_edge e = []
       let map_vertex = function
         |PkgV.Pkg {value} ->
           let name = ("realpackage",CudfAdd.decode value.Cudf.package) in
           let version = ("realversion",CudfAdd.string_of_version value) in
-     
+
           let props =
             List.filter_map (fun (key,_,_) ->
-              try Some(key,Cudf.lookup_package_property value key)
-              with Not_found -> None
-            ) vertex_properties
+                try Some(key,Cudf.lookup_package_property value key)
+                with Not_found -> None
+              ) vertex_properties
           in
           name :: version :: props
         |PkgV.Set _ -> [] (* XXX *)
@@ -241,11 +239,11 @@ module SyntacticDependencyGraph = struct
       let labelold = G.E.label e in
       match !labelold, label with
       |PkgE.MissingDepends vpkgs1,PkgE.MissingDepends vpkgs2 ->
-          labelold := (PkgE.MissingDepends (vpkgs1@vpkgs2))
+        labelold := (PkgE.MissingDepends (vpkgs1@vpkgs2))
       |PkgE.DirDepends vpkgs1, PkgE.DirDepends vpkgs2 ->
-          labelold := (PkgE.DirDepends (vpkgs1@vpkgs2))
+        labelold := (PkgE.DirDepends (vpkgs1@vpkgs2))
       |PkgE.OrDepends vpkgs1, PkgE.OrDepends vpkgs2 ->
-          labelold := (PkgE.OrDepends (vpkgs1@vpkgs2))
+        labelold := (PkgE.OrDepends (vpkgs1@vpkgs2))
       |_,_-> G.add_edge_e gr (G.E.create s (ref label) d)
     with Not_found ->
       G.add_edge_e gr (G.E.create s (ref label) d)
@@ -267,40 +265,40 @@ module SyntacticDependencyGraph = struct
     let gr = G.create () in
     let c = ref 0 in
     Cudf.iter_packages (fun pkg ->
-      Util.Progress.progress depgraphbar;
-      let vpid = add_node pkg in
-      G.add_vertex gr vpid;
-      List.iter (fun vpkgs ->
-        match CudfAdd.resolve_deps univ vpkgs with 
-        |[] ->
-            let vp = G.V.create (PkgV.Missing vpkgs) in
-            add_edge gr vpid (PkgE.MissingDepends vpkgs) vp
-        |[p] ->
-            let vp = add_node p in
-            add_edge gr vpid (PkgE.DirDepends vpkgs) vp
-        |l ->
-            begin
-              let vor = G.V.create (PkgV.Or !c) in incr c;
-              add_edge gr vpid (PkgE.OrDepends vpkgs) vor;
-              List.iter (fun p ->
-                let vp = add_node p in
-                add_edge gr vor (PkgE.OrDepends vpkgs) vp
-              ) l
-            end
-      ) pkg.Cudf.depends
-      ;
-      List.iter (fun p ->
-        if not(CudfAdd.equal p pkg) then
-          let vp = add_node p in
-          let edge =
-            if G.V.compare vpid vp > 0 then
-              G.E.create vpid (ref (PkgE.Conflict ("",None))) vp
-            else
-              G.E.create vp (ref (PkgE.Conflict ("",None))) vpid
-          in
-          G.add_edge_e gr edge
-      ) (CudfAdd.who_conflicts conflicts univ pkg)
-    ) univ
+        Util.Progress.progress depgraphbar;
+        let vpid = add_node pkg in
+        G.add_vertex gr vpid;
+        List.iter (fun vpkgs ->
+            match CudfAdd.resolve_deps univ vpkgs with 
+            |[] ->
+              let vp = G.V.create (PkgV.Missing vpkgs) in
+              add_edge gr vpid (PkgE.MissingDepends vpkgs) vp
+            |[p] ->
+              let vp = add_node p in
+              add_edge gr vpid (PkgE.DirDepends vpkgs) vp
+            |l ->
+              begin
+                let vor = G.V.create (PkgV.Or !c) in incr c;
+                add_edge gr vpid (PkgE.OrDepends vpkgs) vor;
+                List.iter (fun p ->
+                    let vp = add_node p in
+                    add_edge gr vor (PkgE.OrDepends vpkgs) vp
+                  ) l
+              end
+          ) pkg.Cudf.depends
+        ;
+        List.iter (fun p ->
+            if not(CudfAdd.equal p pkg) then
+              let vp = add_node p in
+              let edge =
+                if G.V.compare vpid vp > 0 then
+                  G.E.create vpid (ref (PkgE.Conflict ("",None))) vp
+                else
+                  G.E.create vp (ref (PkgE.Conflict ("",None))) vpid
+              in
+              G.add_edge_e gr edge
+          ) (CudfAdd.who_conflicts conflicts univ pkg)
+      ) univ
     ;
     Util.Timer.stop timer gr
   ;;
@@ -330,50 +328,50 @@ module ActionGraph = struct
   module G = Imperative.Digraph.ConcreteBidirectional(PkgV)
 
   let get_partial_order g =
-    let module Dfs = Graph.Traverse.Dfs(G) in
+    let module Dfs = Ocamlgraph.Traverse.Dfs(G) in
     if Dfs.has_cycle g then
       failwith "need a DAG without cycles as input for partial order";
     let module Hashtbl = OCAMLHashtbl.Make(G.V) in
     (* find all vertices with no successors (those that have all dependencies
      * fulfilled) *)
     let init = G.fold_vertex (fun v acc ->
-      match G.succ g v with
+        match G.succ g v with
         | [] -> v::acc
         | _ -> acc
-    ) g [] in
+      ) g [] in
     let result = ref [init] in
     let processed = Hashtbl.create (G.nb_vertex g) in
     let tocheck = Hashtbl.create (G.nb_vertex g) in
     (* fill the two hashtables, starting from the initial result *)
     List.iter (fun v ->
-      Hashtbl.replace processed v ();
-      G.iter_pred (fun pred ->
-        Hashtbl.replace tocheck pred ()
-      ) g v
-    ) init;
+        Hashtbl.replace processed v ();
+        G.iter_pred (fun pred ->
+            Hashtbl.replace tocheck pred ()
+          ) g v
+      ) init;
     while Hashtbl.length tocheck > 0 do
       let localprocessed = Hashtbl.create (G.nb_vertex g) in
       (* iterate over the to-be-checked vertices and check if all of their
        * dependencies are already in the result *)
       Hashtbl.iter (fun v _ ->
-        let satisfied = G.fold_succ (fun succ acc ->
-          if acc then Hashtbl.mem processed succ else acc
-        ) g v true in
-        (* if yes, remove this vertex from tocheck, add it to the result and 
-         * add its predecessors to tocheck*)
-        if satisfied then begin
-          Hashtbl.remove tocheck v;
-          Hashtbl.replace localprocessed v ();
-          G.iter_pred (fun pred ->
-            Hashtbl.replace tocheck pred ()
-          ) g v;
-        end;
-      ) tocheck;
+          let satisfied = G.fold_succ (fun succ acc ->
+              if acc then Hashtbl.mem processed succ else acc
+            ) g v true in
+          (* if yes, remove this vertex from tocheck, add it to the result and 
+           * add its predecessors to tocheck*)
+          if satisfied then begin
+            Hashtbl.remove tocheck v;
+            Hashtbl.replace localprocessed v ();
+            G.iter_pred (fun pred ->
+                Hashtbl.replace tocheck pred ()
+              ) g v;
+          end;
+        ) tocheck;
       (* add results of this round to global variables *)
       let l = Hashtbl.fold (fun v _ acc ->
-        Hashtbl.replace processed v ();
-        v::acc
-      ) localprocessed [] in
+          Hashtbl.replace processed v ();
+          v::acc
+        ) localprocessed [] in
       result := l::!result
     done;
     List.rev !result
@@ -398,16 +396,15 @@ module ActionGraph = struct
 
       let edge_attributes e = []
     end
-    include Graph.Graphviz.Dot(Display)
-    let print fmt g = fprint_graph fmt g
+    let print fmt g = ()
   end 
 
   module GmlPrinter = Gml.Print (G) (
     struct
-       let node (v: G.V.label) = []
-       let edge (e: G.E.label) = []
-     end
-  )
+      let node (v: G.V.label) = []
+      let edge (e: G.E.label) = []
+    end
+    )
 
 end
 
@@ -445,16 +442,15 @@ module PackageGraph = struct
 
       let edge_attributes e = []
     end
-    include Graph.Graphviz.Dot(Display)
-    let print fmt g = fprint_graph fmt g
+    let print fmt g = ()
   end 
 
   module GmlPrinter = Gml.Print (G) (
     struct
-       let node (v: G.V.label) = []
-       let edge (e: G.E.label) = []
-     end
-  )
+      let node (v: G.V.label) = []
+      let edge (e: G.E.label) = []
+    end
+    )
 
   module GraphmlPrinter = Graphml.Print (G)(
     struct
@@ -469,23 +465,23 @@ module PackageGraph = struct
          "realpackage","string",None;
          "realversion","string",None;
         ]
-     
+
       let edge_properties = [
         "vpkglist","string",None;
         "binaries","string",None;
-        ]
+      ]
 
       let map_edge e = []
       let map_vertex pkg =
         let name = ("realpackage",CudfAdd.decode pkg.Cudf.package) in
         let version = ("realversion",CudfAdd.string_of_version pkg) in
-   
+
         let props =
           List.filter_map (fun (key,_,_) ->
-            try let value = Cudf.lookup_package_property pkg key in
-            Some(key,value)
-            with Not_found -> None
-          ) vertex_properties
+              try let value = Cudf.lookup_package_property pkg key in
+                Some(key,value)
+              with Not_found -> None
+            ) vertex_properties
         in
         name :: version :: props
 
@@ -499,12 +495,12 @@ module PackageGraph = struct
     let rec adapt g k red =
       let new_red = 
         S.fold (fun l acc ->
-          if not(G.V.equal k l) then G.add_edge g k l;
-          G.fold_succ (fun m acc' ->
-            if not (G.mem_edge g k m) then S.add m acc'
-            else acc'
-          ) g l acc
-        ) red S.empty 
+            if not(G.V.equal k l) then G.add_edge g k l;
+            G.fold_succ (fun m acc' ->
+                if not (G.mem_edge g k m) then S.add m acc'
+                else acc'
+              ) g l acc
+          ) red S.empty 
       in
       if S.is_empty new_red then ()
       else adapt g k new_red
@@ -512,9 +508,9 @@ module PackageGraph = struct
     let insert g i j =
       adapt g i (S.singleton j);
       G.iter_pred (fun k ->
-        if not (G.mem_edge g k j) then
-          adapt g k (S.singleton j)
-      ) g i
+          if not (G.mem_edge g k j) then
+            adapt g k (S.singleton j)
+        ) g i
     in
     match transitive with
     |None -> G.add_edge graph i j
@@ -529,10 +525,10 @@ module PackageGraph = struct
   let conjdepgraph_int ?(transitive=false) graph univ p =
     G.add_vertex graph p;
     List.iter (fun vpkgs ->
-      match CudfAdd.resolve_deps univ vpkgs with
-      |[q] when not(CudfAdd.equal q p) -> add_edge ~transitive graph p q
-      |_ -> ()
-    ) p.Cudf.depends
+        match CudfAdd.resolve_deps univ vpkgs with
+        |[q] when not(CudfAdd.equal q p) -> add_edge ~transitive graph p q
+        |_ -> ()
+      ) p.Cudf.depends
 
   (** for all id \in idlist add to the graph all conjunctive dependencies *)
   let conjdepgraph univ idlist =
@@ -546,17 +542,17 @@ module PackageGraph = struct
     fun id ->
       try Hashtbl.find h id
       with Not_found -> begin
-        let module Dfs = Traverse.Dfs(G) in
-        let l = ref [] in
-        let collect id = l := id :: !l in
-        Dfs.prefix_component collect graph id;
-        Hashtbl.add h id !l;
-        !l
-      end
+          let module Dfs = Traverse.Dfs(G) in
+          let l = ref [] in
+          let collect id = l := id :: !l in
+          Dfs.prefix_component collect graph id;
+          Hashtbl.add h id !l;
+          !l
+        end
 
   let dependency_graph_aux conjunctive gr universe pkg =
-      G.add_vertex gr pkg;
-      List.iter (fun vpkgs ->
+    G.add_vertex gr pkg;
+    List.iter (fun vpkgs ->
         match CudfAdd.resolve_deps universe vpkgs with
         |[p] -> G.add_edge gr pkg p
         |l when not conjunctive -> List.iter (G.add_edge gr pkg) l
@@ -577,9 +573,9 @@ module PackageGraph = struct
 
   let conflict_graph_aux gr universe pkg =
     List.iter (fun (pkgname,constr) ->
-      List.iter (UG.add_edge gr pkg)
-      (CudfAdd.who_provides universe (pkgname,constr))
-    ) pkg.Cudf.conflicts
+        List.iter (UG.add_edge gr pkg)
+          (CudfAdd.who_provides universe (pkgname,constr))
+      ) pkg.Cudf.conflicts
 
   (** Build the conflict graph from the given list of packages *)
   let conflict_graph_list universe pkglist =
@@ -601,7 +597,7 @@ module PackageGraph = struct
 
   (** Return the list of connected component of an undirected graph *)
   let connected_components graph =
-    let module C = Graph.Components.Make(UG) in
+    let module C = Ocamlgraph.Components.Make(UG) in
     C.scc_list graph
 
   let pred_list graph q =
@@ -643,25 +639,25 @@ module PackageGraph = struct
       G.add_vertex g nv;
       let s = CudfAdd.to_set c in
       List.iter (fun p ->
-        if G.mem_vertex g p then begin
-          G.iter_pred (fun q -> if not (Set.mem q s) then G.add_edge g q nv) g p;
-          G.iter_succ (fun q -> if not (Set.mem q s) then G.add_edge g nv q) g p;
-          G.remove_vertex g p;
-        end;
-        Hashtbl.remove visited p
-      ) (v::c);
+          if G.mem_vertex g p then begin
+            G.iter_pred (fun q -> if not (Set.mem q s) then G.add_edge g q nv) g p;
+            G.iter_succ (fun q -> if not (Set.mem q s) then G.add_edge g nv q) g p;
+            G.remove_vertex g p;
+          end;
+          Hashtbl.remove visited p
+        ) (v::c);
       (other, nv)
     in
     let rec visit path v =
       if G.mem_vertex g v then begin
         Hashtbl.add visited v true;
         G.iter_succ (fun w ->
-          try
-            if Hashtbl.find visited w then
-              let (other, nv) = reduce_cycle (v::path) w in
-              visit other nv
-          with Not_found -> visit (v::path) w
-        ) g v;
+            try
+              if Hashtbl.find visited w then
+                let (other, nv) = reduce_cycle (v::path) w in
+                visit other nv
+            with Not_found -> visit (v::path) w
+          ) g v;
         Hashtbl.replace visited v false
       end
     in
@@ -670,12 +666,12 @@ module PackageGraph = struct
 
   let out ?(dump=None) ?(dot=None) ?(detrans=false) pkggraph =
     info "Dumping Graph : nodes %d , edges %d"
-    (G.nb_vertex pkggraph) (G.nb_edges pkggraph) ;
-    
+      (G.nb_vertex pkggraph) (G.nb_edges pkggraph) ;
+
     if detrans then begin
       O.transitive_reduction pkggraph;
       debug "After transitive reduction : nodes %d , edges %d"
-      (G.nb_vertex pkggraph) (G.nb_edges pkggraph)
+        (G.nb_vertex pkggraph) (G.nb_edges pkggraph)
     end ;
 
     if dump <> None then begin
@@ -690,7 +686,6 @@ module PackageGraph = struct
       let f = Option.get dot in
       debug "Saving dot graph in %s\n" f ;
       let oc = open_out f in
-      DotPrinter.output_graph oc pkggraph;
       close_out oc
     end 
 
@@ -744,26 +739,25 @@ module IntPkgGraph = struct
 
       let edge_attributes e = []
     end
-    include Graph.Graphviz.Dot(Display)
-    let print fmt g = fprint_graph fmt g
+    let print fmt g = ()
   end 
 
   module DIn = Dot.Parse (Builder.I(G))(
     struct
       let node (id,_) _ =
         match id with
-        |Graph.Dot_ast.String s -> int_of_string s
+        |Ocamlgraph.Dot_ast.String s -> int_of_string s
         |_ -> assert false
       let edge _ = ()
     end
-  )
+    )
 
   module GmlPrinter = Gml.Print (G) (
     struct
-       let node (v: G.V.label) = []
-       let edge (e: G.E.label) = []
+      let node (v: G.V.label) = []
+      let edge (e: G.E.label) = []
     end
-  )
+    )
 
   let add_edge graph i j =
     debug "Adding edge from %d to %d" i j;
@@ -774,10 +768,10 @@ module IntPkgGraph = struct
     G.add_vertex graph id;
     let p = CudfAdd.inttopkg univ id in
     List.iter (fun vpkgs ->
-      match CudfAdd.resolve_vpkgs_int univ vpkgs with
-      |[q] when q <> id -> add_edge graph id q
-      |_ -> ()
-    ) p.Cudf.depends
+        match CudfAdd.resolve_vpkgs_int univ vpkgs with
+        |[q] when q <> id -> add_edge graph id q
+        |_ -> ()
+      ) p.Cudf.depends
 
   (** for all id \in idlist add to the graph all conjunctive dependencies *)
   let conjdepgraph univ idlist =
@@ -791,13 +785,13 @@ module IntPkgGraph = struct
     fun id ->
       try Hashtbl.find h id
       with Not_found -> begin
-        let module Dfs = Traverse.Dfs(G) in
-        let l = ref [] in
-        let collect id = l := id :: !l in
-        Dfs.prefix_component collect graph id;
-        Hashtbl.add h id !l;
-        !l
-      end
+          let module Dfs = Traverse.Dfs(G) in
+          let l = ref [] in
+          let collect id = l := id :: !l in
+          Dfs.prefix_component collect graph id;
+          Hashtbl.add h id !l;
+          !l
+        end
 
   (** Build the dependency graph from the given index. conjunctive and
       disjunctive dependencies are considered as equal *)
@@ -805,14 +799,14 @@ module IntPkgGraph = struct
     let size = Cudf.universe_size universe in
     let graph = G.create ~size () in
     Cudf.iteri_packages (fun id pkg ->
-      G.add_vertex graph id;
-      List.iter (fun vpkgs ->
-        match CudfAdd.resolve_vpkgs_int universe vpkgs with
-        |[p] -> G.add_edge graph id p
-        |l when not conjunctive -> List.iter (G.add_edge graph id) l
-        |_ -> ()
-      ) pkg.Cudf.depends
-    ) universe;
+        G.add_vertex graph id;
+        List.iter (fun vpkgs ->
+            match CudfAdd.resolve_vpkgs_int universe vpkgs with
+            |[p] -> G.add_edge graph id p
+            |l when not conjunctive -> List.iter (G.add_edge graph id) l
+            |_ -> ()
+          ) pkg.Cudf.depends
+      ) universe;
     graph
 
   let dependency_graph_list ?(conjunctive=false) universe idlist =
@@ -827,20 +821,20 @@ module IntPkgGraph = struct
         G.add_vertex graph id;
         Hashtbl.add visited id ();
         List.iter (fun vpkgs ->
-          match CudfAdd.resolve_vpkgs_int universe vpkgs with
-          |[i] when not(Hashtbl.mem visited i) -> begin
-              Queue.add i queue;
-              G.add_edge graph id i
-          end
-          |dsj when not conjunctive ->
-            List.iter (fun i ->
-              if not(Hashtbl.mem visited i) then begin
+            match CudfAdd.resolve_vpkgs_int universe vpkgs with
+            |[i] when not(Hashtbl.mem visited i) -> begin
                 Queue.add i queue;
                 G.add_edge graph id i
               end
-            ) dsj
-          |_ -> ()
-        ) pkg.Cudf.depends
+            |dsj when not conjunctive ->
+              List.iter (fun i ->
+                  if not(Hashtbl.mem visited i) then begin
+                    Queue.add i queue;
+                    G.add_edge graph id i
+                  end
+                ) dsj
+            |_ -> ()
+          ) pkg.Cudf.depends
       end
     done;
     graph

@@ -1,0 +1,17 @@
+{
+  "name": "bs-dose",
+  "version": "5.0.1",
+  "description": "the library builds a pipeline as follows :",
+  "dependencies": {
+    "bs-cudf": "esy-ocaml/bs-cudf",
+    "bs-extlib": "esy-ocaml/bs-extlib",
+    "bs-ocamlgraph": "esy-ocaml/bs-ocamlgraph",
+    "bs-re": "esy-ocaml/bs-re"
+  },
+  "devDependencies": {
+    "bs-platform": "^1.7.4"
+  },
+  "scripts": {
+    "postinstall": "aclocal -I m4 && autoconf && ./configure && ocamllex common/shell_lexer.mll && ocamllex common/criteria_lexer.mll && ocamlyacc -b common/criteria_parser common/criteria_parser.mly"
+  }
+}
